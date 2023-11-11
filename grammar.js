@@ -28,7 +28,7 @@ module.exports = grammar({
 
   rules: {
     source_file: $ => repeat(
-      choice($.domain, $.field, $.function, $.predicate, $.method)
+      choice($.domain, $.field, $.function, $.predicate, $.method, $.expr)
     ),
     comment: $ => token(seq('//', /.*/)),
     method: $ => seq(
