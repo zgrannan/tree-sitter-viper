@@ -28,7 +28,15 @@ module.exports = grammar({
 
   rules: {
     source_file: $ => repeat(
-      choice($.domain, $.field, $.function, $.predicate, $.method, $.expr)
+      choice(
+        $.domain,
+        $.field,
+        $.function,
+        $.predicate,
+        $.method,
+        $.stmt, // Technically not allowed at toplevel, but allow parse
+        $.expr  // Technically not allowed at toplevel, but allow parse
+      )
     ),
     comment: $ => token(seq('//', /.*/)),
     method: $ => seq(
@@ -36,6 +44,8 @@ module.exports = grammar({
       $.ident,
       parens(commaSep($.parameter)),
       optional($.returns),
+      repeat($.requires),
+      repeat($.ensures),
       optional($.method_body)
     ),
     returns: $ => seq(
@@ -43,7 +53,7 @@ module.exports = grammar({
       parens(commaSep1($.parameter))
     ),
     method_body: $ => braces(repeat($.stmt)),
-    stmt: $ => choice(
+    stmt: $ => prec(1, choice(
       $.var_decl,
       $.label,
       $.assign_stmt,
@@ -54,8 +64,9 @@ module.exports = grammar({
       $.fold_stmt,
       $.unfold_stmt,
       $.goto_stmt,
-      $.if_stmt
-    ),
+      $.if_stmt,
+      $.function_call
+    )),
     if_stmt: $ => seq(
       'if',
       parens($.expr),
@@ -84,7 +95,13 @@ module.exports = grammar({
       'var',
       $.ident,
       ':',
-      $.ident
+      $.typ,
+      optional(
+        seq(
+          ':=',
+          $.expr
+        )
+      )
     ),
     predicate: $ => seq(
       'predicate', 
@@ -146,11 +163,12 @@ module.exports = grammar({
       $.field_access_expr
     ),
     expr: $ => choice(
-      $.labelled_old,
+      $.index_expr,
+      $.old_expr,
       $.ternary_expr,
       $.field_access_expr,
       $.unfolding,
-      $.forall,
+      $.quantified_expr,
       $.int_literal,
       $.unary_expr,
       $.bin_expr,
@@ -159,6 +177,8 @@ module.exports = grammar({
       $.let_expr,
       parens($.expr)
     ),
+    typ: $ => seq($.ident, optional(brackets($.ident))),
+    index_expr : $ => prec.left(3, seq($.expr, brackets($.expr))),
     unary_expr : $ => prec.left(1, seq(
       '!',
       $.expr
@@ -171,9 +191,9 @@ module.exports = grammar({
       'in',
       $.expr
     ),
-    labelled_old: $ => seq(
+    old_expr: $ => seq(
       'old',
-      brackets($.ident),
+      optional(brackets($.ident)),
       parens($.expr)
     ),
     ternary_expr: $ => prec.left(1, seq(
@@ -200,11 +220,25 @@ module.exports = grammar({
     )),
     bin_expr: $ => prec.left(2, seq(
       $.expr,
-      choice("+", "-", "/", "==>", "&&", "==", "!=", "<", ">", "<=", ">="),
+      choice(
+        "+",
+        "-",
+        "/",
+        "==>",
+        "&&",
+        "==",
+        "!=",
+        "<",
+        ">",
+        "<=",
+        ">=",
+        "union",
+        "setminus"
+      ),
       $.expr
     )),
-    forall: $ => seq(
-      'forall',
+    quantified_expr: $ => seq(
+      choice('forall', 'exists'),
       commaSep1($.parameter),
       '::',
       optional($.triggers),
@@ -215,7 +249,7 @@ module.exports = grammar({
     parameter: $ => seq(
       $.ident,
       ':',
-      $.ident
+      $.typ
     ),
     int_literal: $ => /[0-9]+/,
   }
