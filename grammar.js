@@ -18,6 +18,16 @@ function brackets(rule) {
   return seq('[', rule, ']');
 }
 
+function mk_bin_expr(n, op, expr) {
+  return prec.left(n,
+      seq(
+        field("lhs", expr),
+        field("operator", op),
+        field("rhs", expr)
+      )
+    );
+}
+
 module.exports = grammar({
   name: 'Viper',
 
@@ -46,13 +56,13 @@ module.exports = grammar({
       optional($.returns),
       repeat($.requires),
       repeat($.ensures),
-      optional($.method_body)
+      field("body", optional($.block))
     ),
     returns: $ => seq(
       'returns',
       parens(commaSep1($.parameter))
     ),
-    method_body: $ => braces(repeat($.stmt)),
+    block: $ => braces(repeat($.stmt)),
     stmt: $ => prec(1, choice(
       $.var_decl,
       $.label,
@@ -69,19 +79,19 @@ module.exports = grammar({
     )),
     if_stmt: $ => seq(
       'if',
-      parens($.expr),
-      braces(repeat($.stmt)),
-      optional(
+      field("condition", parens($.expr)),
+      field("then_clause", $.block),
+      field("else_clause", optional(
         seq(
           'else',
-          braces(repeat($.stmt))
+          $.block
         )
-      )
+      ))
     ),
     assign_stmt: $ =>seq(
-      $.assign_target,
+      field("target", $.assign_target),
       ':=',
-      $.expr
+      field("expr", $.expr)
     ),
     inhale_stmt: $ => seq('inhale', $.expr),
     exhale_stmt: $ => seq('exhale', $.expr),
@@ -90,16 +100,16 @@ module.exports = grammar({
     fold_stmt: $ => seq('fold', $.expr),
     unfold_stmt: $ => seq('unfold', $.expr),
     label: $ => seq('label', $.ident),
-    goto_stmt: $ => seq('goto', $.ident),
+    goto_stmt: $ => seq('goto', field("target", $.ident)),
     var_decl: $ => seq(
       'var',
-      $.ident,
+      field("ident", $.ident),
       ':',
       $.typ,
       optional(
         seq(
           ':=',
-          $.expr
+          field("expr", $.expr)
         )
       )
     ),
@@ -193,15 +203,15 @@ module.exports = grammar({
     ),
     old_expr: $ => seq(
       'old',
-      optional(brackets($.ident)),
-      parens($.expr)
+      optional(brackets(field("label", $.ident))),
+      parens(field("expr", $.expr))
     ),
     ternary_expr: $ => prec.left(1, seq(
-      $.expr,
+      field("condition", $.expr),
       '?',
-      $.expr,
+      field("then_expr", $.expr),
       ':',
-      $.expr
+      field("else_expr", $.expr)
     )),
     field_access_expr: $ => prec.left(1, seq(
       $.expr,
@@ -218,25 +228,22 @@ module.exports = grammar({
       $.ident,
       parens(commaSep($.expr))
     )),
-    bin_expr: $ => prec.left(2, seq(
-      $.expr,
+    bin_expr: $ =>
       choice(
-        "+",
-        "-",
-        "/",
-        "==>",
-        "&&",
-        "==",
-        "!=",
-        "<",
-        ">",
-        "<=",
-        ">=",
-        "union",
-        "setminus"
+        mk_bin_expr(3, "+", $.expr),
+        mk_bin_expr(3, "-", $.expr),
+        mk_bin_expr(3, "/", $.expr),
+        mk_bin_expr(2, "==>", $.expr),
+        mk_bin_expr(3, "&&", $.expr),
+        mk_bin_expr(3, "==", $.expr),
+        mk_bin_expr(3, "!=", $.expr),
+        mk_bin_expr(3, "<", $.expr),
+        mk_bin_expr(3, ">", $.expr),
+        mk_bin_expr(3, "<=", $.expr),
+        mk_bin_expr(3, ">=", $.expr),
+        mk_bin_expr(3, "union", $.expr),
+        mk_bin_expr(3, "setminus", $.expr)
       ),
-      $.expr
-    )),
     quantified_expr: $ => seq(
       choice('forall', 'exists'),
       commaSep1($.parameter),
