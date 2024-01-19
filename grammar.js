@@ -183,6 +183,8 @@ module.exports = grammar({
       $.unary_expr,
       $.bin_expr,
       $.function_call,
+      'true',
+      'false',
       $.ident,
       $.let_expr,
       parens($.expr)
