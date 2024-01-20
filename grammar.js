@@ -134,14 +134,14 @@ module.exports = grammar({
     ),
     domain_function: $ => seq(
       'function',
-      $.ident,
+      field("name", $.ident),
       parens(commaSep($.parameter)),
       ':',
       $.ident
     ),
     function: $ => seq(
       'function',
-      $.ident,
+      field("name", $.ident),
       parens(commaSep($.parameter)),
       ':',
       $.ident,

@@ -1,6 +1,6 @@
 {
   "name": "tree-sitter-viper",
-  "version": "0.1",
+  "version": "0.2",
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,5 +12,6 @@
   },
   "devDependencies": {
     "tree-sitter-cli": "^0.20.8"
-  }
+  },
+  "main": "bindings/node"
 }

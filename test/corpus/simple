@@ -1,0 +1,13 @@
+===
+Simple Method
+===
+method builtin$havoc_ref() returns (ret: Ref)
+---
+(source_file
+    (method
+    (ident)
+    (returns
+        (parameter
+        (ident)
+        (typ
+            (ident))))))
