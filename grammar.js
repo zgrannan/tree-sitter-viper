@@ -121,7 +121,7 @@ module.exports = grammar({
     ),
     predicate: $ => seq(
       'predicate', 
-      $.ident, 
+      field("name", $.ident),
       parens(commaSep($.parameter)),
       optional(braces($.expr))
     ),
