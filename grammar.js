@@ -32,7 +32,8 @@ module.exports = grammar({
   name: 'Viper',
 
   extras: $ => [
-    $.comment,
+    $.block_comment,
+    $.line_comment,
     /[\s\uFEFF\u2060\u200B\u00A0]/
   ],
 
@@ -48,10 +49,15 @@ module.exports = grammar({
         $.expr  // Technically not allowed at toplevel, but allow parse
       )
     ),
-    comment: $ => token(seq('//', /.*/)),
+    block_comment: $ => seq(
+      "/*",
+      repeat(choice(/.|\n|\r/)),
+      "*/"
+    ),
+    line_comment: $ => token(seq('//', /.*/)),
     method: $ => seq(
       'method',
-      $.ident,
+      field("name", $.ident),
       parens(commaSep($.parameter)),
       optional($.returns),
       repeat($.requires),
@@ -135,7 +141,7 @@ module.exports = grammar({
     domain_function: $ => seq(
       'function',
       field("name", $.ident),
-      parens(commaSep($.parameter)),
+      parens(commaSep(choice($.parameter, $.typ))),
       ':',
       $.ident
     ),
@@ -165,7 +171,7 @@ module.exports = grammar({
     ),
     axiom: $ => seq(
       'axiom',
-      $.ident,
+      optional($.ident),
       braces($.expr)
     ),
     assign_target: $ => choice(
