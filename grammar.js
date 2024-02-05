@@ -128,7 +128,7 @@ module.exports = grammar({
     field: $ => seq('field', $.ident, ':', $.ident),
     domain: $ => seq(
       'domain',
-      $.ident,
+      field("name", $.ident),
       braces(
         repeat(
           choice(
